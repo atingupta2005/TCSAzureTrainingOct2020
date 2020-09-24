@@ -1,0 +1,18 @@
+{
+"create": {
+  "parentObject": {
+    "database": "adventureworks",
+   },
+   "role": {
+     "name": "Internet Sales Global",
+     "description": "All users can query model data",
+     "modelPermission": "read",
+     "members": [
+       {
+         "memberName": "globalsales@adventureworks.com",
+         "identityProvider": "AzureAD"
+       }
+     ]
+   }
+  }
+}

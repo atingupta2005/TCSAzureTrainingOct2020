@@ -17,11 +17,12 @@ PolyBase 6 steps Process
 
 /*
 1. Create a Database Master Key. Only necessary if one does not already exist.
-   Required to encrypt the credential secret in the next step.
-   To access your Data Lake Storage account, you will need to create a Database Master Key to encrypt your credential secret. 
-   You then create a Database Scoped Credential to store your secret. 
-   When authenticating using service principals (Azure Directory Application user), 
-   the Database Scoped Credential stores the service principal credentials set up in AAD. 
+    - Required to encrypt the credential secret in the next step.
+    - To access your Data Lake Storage account, you will need to create a 
+      Database Master Key to encrypt your credential secret. 
+    - You then create a Database Scoped Credential to store your secret. 
+    - When authenticating using service principals (Azure Directory Application user), 
+      the Database Scoped Credential stores the service principal credentials set up in AAD. 
    You can also use the Database Scoped Credential to store the storage account key for Blob storage.
 */
 
@@ -40,6 +41,7 @@ CREATE DATABASE SCOPED CREDENTIAL BlobStorageCredential
 WITH
     IDENTITY = 'blobuser',  
 	SECRET = 'ZYfcNUnKJLRqDpZDwly1dUb8bsXe3NP8Ti4nLXCbd8jhYwEoWaBUohGN3cK4eQ0mCKr6WAEBAaUSQmY8b3hhzA=='   
+	/* Note: Modify Secret. Secret is the storage account secret key */
 ;
 GO
 
@@ -55,6 +57,8 @@ CREATE EXTERNAL DATA SOURCE AzureBlobStorage
 WITH (
     TYPE = HADOOP,
     LOCATION = 'wasbs://demofiles@synapsestorage108.blob.core.windows.net',
+		/* demofiles is name of the container */
+		/* Note: Modify container name and storage account name. */
     CREDENTIAL = BlobStorageCredential
 );
 GO
@@ -74,7 +78,7 @@ WITH
 ,   FORMAT_OPTIONS  (   FIELD_TERMINATOR = ','
                     ,   STRING_DELIMITER = ''
                     ,   DATE_FORMAT      = 'yyyy-MM-dd HH:mm:ss'
-                    ,   USE_TYPE_DEFAULT = FALSE 
+                    ,   USE_TYPE_DEFAULT = FALSE 	/* Means that we are going to have null instead of using default value for missing data */
                     )
 );
 GO
@@ -113,10 +117,11 @@ WITH
     LOCATION='/FTH/' 
 ,   DATA_SOURCE = AzureBlobStorage
 ,   FILE_FORMAT = CSVFileFormat
-,   REJECT_TYPE = VALUE
-,   REJECT_VALUE = 0
+,   REJECT_TYPE = VALUE		/*   */
+,   REJECT_VALUE = 0		/* If more than 0 error happen then entire load will fail  */
 )
 GO
+/* Refresh the database to see changes */
 
 /* 6 CREATE TABLE AS  - CTAS
 	CTAS creates a new table and populates it with the results of a select statement. 
@@ -134,7 +139,16 @@ WITH (DISTRIBUTION = HASH([ProductKey]  ) )
 AS 
 SELECT * FROM [stage].[FactTransactionHistory]        
 OPTION (LABEL = 'Load [prod].[FactTransactionHistory1]');
+/* Refresh the database to see changes */
 
+
+/* ------- Optional    ------------*/
+-- check the progress of the load
+SELECT * FROM sys.dm_pdw_exec_requests r 
+JOIN sys.dm_pdw_dms_workers w on r.request_id = w.request_id
+WHERE r.[label] = 'Load [prod].[FactTransactionHistory1]'
+order by w.start_time desc;
+/* ------- Optional End   ------------*/
 
 
 -- Verify number of rows

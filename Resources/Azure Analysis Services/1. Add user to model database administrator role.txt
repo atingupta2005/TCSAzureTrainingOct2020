@@ -1,0 +1,18 @@
+{
+ "createOrReplace": {
+   "object": {
+     "database": "adventureworks",
+	 "role": "Internet Sales Administrator"
+ },
+ "role": {
+	"name": "Internet Sales Administrator",
+	"modelPermission": "administrator",
+	"members": [
+	 {
+		"memberName": "atin@adventureworks.com",
+		"identityProvider": "AzureAD"
+	 }
+	]
+  }
+ }
+}
